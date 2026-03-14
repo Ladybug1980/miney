@@ -1,0 +1,6 @@
+streamlit
+pyupbit
+websocket-client
+streamlit-autorefresh
+python-dotenv
+plotly
