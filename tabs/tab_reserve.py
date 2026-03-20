@@ -4,9 +4,7 @@ Schedule orders by time or strategy condition.
 Execution time is fully user-configurable: date + hour + minute.
 """
 import streamlit as st
-import pandas as pd
-from datetime import datetime, date, time, timedelta
-from streamlit_autorefresh import st_autorefresh
+from datetime import datetime, time
 from tabs.tab_log import add_log
 from utils import get_ticker_display, is_stock
 
@@ -126,10 +124,7 @@ def _datetime_picker(key_prefix: str):
 def render(broker):
     _init()
     
-    # 30초마다 자동 갱신하여 시간이 된 주문이 있는지 체크
-    st_autorefresh(interval=30_000, key="reserve_autorefresh")
-    
-    # 시간에 도달한 주문 실행
+    # 시간에 도달한 주문 실행 (전역 autorefresh에서도 처리되지만 탭 진입 시에도 체크)
     if _check_and_execute(broker):
         st.rerun(scope="fragment")
 

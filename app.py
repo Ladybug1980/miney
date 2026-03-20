@@ -10,7 +10,9 @@ import os
 import streamlit as st
 import requests
 import time
+from datetime import datetime
 from dotenv import load_dotenv
+from streamlit_autorefresh import st_autorefresh
 
 from broker_upbit import BrokerUpbit
 from broker_kis import BrokerKIS
@@ -203,6 +205,36 @@ def fragment_reserve():
 @st.fragment
 def fragment_history():
     tab_history.render(broker)
+
+# ── 전역 예약주문 자동 체크 (탭에 관계없이 30초마다 실행) ────────────────
+st_autorefresh(interval=30_000, key="global_reserve_autorefresh")
+
+def _global_check_reserve():
+    if "reserve_orders" not in st.session_state:
+        return
+    now = datetime.now()
+    broker = st.session_state.get("broker")
+    if broker is None:
+        return
+    for i, order in enumerate(st.session_state.reserve_orders):
+        if not order.get("active") or order.get("status") != "대기중":
+            continue
+        exec_at_str = order.get("exec_at", "")
+        if not exec_at_str:
+            continue
+        try:
+            exec_dt = datetime.strptime(exec_at_str, "%Y-%m-%d %H:%M")
+        except ValueError:
+            continue
+        if now >= exec_dt and order.get("strategy") == "시간 지정 실행":
+            from tabs.tab_reserve import _execute_order
+            from tabs.tab_log import add_log
+            success, msg = _execute_order(broker, order)
+            st.session_state.reserve_orders[i]["status"] = "완료" if success else "실패"
+            st.session_state.reserve_orders[i]["result"] = msg
+            add_log(f"[예약실행] #{order['id']} {msg}", "ORDER" if success else "ERROR")
+
+_global_check_reserve()
 
 # ── 탭별 fragment 호출 ────────────────────────────────────────────────────
 with t1:
