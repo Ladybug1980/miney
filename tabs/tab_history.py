@@ -41,7 +41,7 @@ def _orders_to_df(orders, ticker=None):
             "수량":    qty_fmt,
             "총액 (KRW)":  f"{total:,.0f}",
             "수수료":  f"{fee:.4f}" if fee else "—",
-            "상태":   o.get("state", ""),
+            "상태":   "체결(부분취소)" if o.get("state") == "cancel" and float(o.get("executed_volume") or 0) > 0 else o.get("state", ""),
         })
     return pd.DataFrame(rows)
 
