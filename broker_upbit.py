@@ -40,7 +40,24 @@ class BrokerUpbit:
         return pyupbit.get_ohlcv(ticker, interval=interval, count=count)
 
     def get_order(self, ticker, state="wait"):
+        if state == "done":
+            return self.get_closed_orders(ticker)
         return self.upbit.get_order(ticker, state=state)
+
+    def get_closed_orders(self, ticker, count=50):
+        """체결 완료 주문 조회 (/v1/orders/closed 사용)"""
+        query = {"market": ticker, "limit": count, "order_by": "desc"}
+        headers = self._auth_header(query)
+        try:
+            res = requests.get(
+                "https://api.upbit.com/v1/orders/closed",
+                params=query, headers=headers, timeout=5,
+            )
+            if res.status_code == 200:
+                return res.json()
+        except Exception:
+            pass
+        return []
 
     def buy_market_order(self, ticker, price):
         return self.upbit.buy_market_order(ticker, price)
